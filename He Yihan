@@ -1,0 +1,271 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+pd.set_option('display.max_columns', None)
+df_emergency = pd.read_csv('ds4d_table_3.csv',skiprows=3)
+df_place = pd.read_csv('ds4d_table_6.csv',skiprows=3)
+df_time = pd.read_csv('ds4d_table_4.csv',skiprows=3)
+  
+ # View the header of table 3 in the database
+df_emergency.head()
+  # View column information
+df_emergency.info()
+  #There is a problem with the data in row 34, where several columns are empty.
+df_emergency
+# Clean invalid data
+df_emergency=df_emergency.drop(df_emergency.index[[34]])
+# Convert object type to computable data type
+df_emergency['Number of deaths'] = df_emergency['Number of deaths'].map(lambda x: x.replace(',', ''))
+df_emergency['Total emergency admissions in last 3 months of life'] = df_emergency['Total emergency admissions in last 3 months of life'].map(lambda x: x.replace(',', ''))
+df_emergency['Number of people with at least emergency hospital admission in last 3 month of life'] = df_emergency['Number of people with at least emergency hospital admission in last 3 month of life'].map(lambda x: x.replace(',', ''))
+df_emergency['Number of people with at least 3 emergency hospital admissions in last 3 month of life'] = df_emergency['Number of people with at least 3 emergency hospital admissions in last 3 month of life'].map(lambda x: x.replace(',', ''))
+
+df_emergency['Number of deaths'] = df_emergency['Number of deaths'].astype(np.int64)
+df_emergency['Total emergency admissions in last 3 months of life'] = df_emergency['Total emergency admissions in last 3 months of life'].astype(np.int64)
+df_emergency['Number of people with at least emergency hospital admission in last 3 month of life'] = df_emergency['Number of people with at least emergency hospital admission in last 3 month of life'].astype(np.int64)
+df_emergency['Number of people with at least 3 emergency hospital admissions in last 3 month of life'] = df_emergency['Number of people with at least 3 emergency hospital admissions in last 3 month of life'].astype(np.int64)
+
+  # View the statistical variables of the data structure. 
+# Observe the range, maximum, minimum, fluctuating trends, etc. 
+df_emergency.describe()
+
+  # View the correlation between data columns
+df_emergency.drop(df_emergency.columns[[0,1,2,3,4]], axis=1).corr()
+
+  # View the header of table 6 in the database
+df_place.head()
+  # View column information
+df_place.info()
+
+  # Convert object type to computable data type
+df_place['Number of death'] = df_place['Number of death'].map(lambda x: x.replace(',', ''))
+df_place['Number of death'] = df_place['Number of death'].astype(np.int64)
+  # View the statistical variables of the data structure
+# Observe the range, maximum, minimum, fluctuating trends, etc. 
+df_place.describe()
+  # View the correlation between data columns
+df_place.drop(df_place.columns[[0,1,2,3,4]], axis=1).corr()
+
+  # View the header of table 6 in the database
+df_place.head()
+  # View column information
+df_place.info()
+  # Convert object type to computable data type
+df_place['Number of death'] = df_place['Number of death'].map(lambda x: x.replace(',', ''))
+df_place['Number of death'] = df_place['Number of death'].astype(np.int64)
+  # View the statistical variables of the data structure
+# Observe the range, maximum, minimum, fluctuating trends, etc. 
+df_place.describe()
+
+  # View the correlation between data columns
+df_place.drop(df_place.columns[[0,1,2,3,4]], axis=1).corr()
+  # View the header of table 4 in the database
+df_time.head()
+  # View column information
+df_time.info()
+  # Convert object type to computable data type
+df_time['Number of people admitted'] = df_time['Number of people admitted'].map(lambda x: x.replace(',', ''))
+df_time['Number of people admitted'] = df_time['Number of people admitted'].astype(np.int64)
+df_time['Total days in hopsital'] = df_time['Total days in hopsital'].map(lambda x: x.replace(',', ''))
+df_time['Total days in hopsital'] = df_time['Total days in hopsital'].astype(np.int64)
+df_time['Number of deaths'] = df_time['Number of deaths'].map(lambda x: x.replace(',', ''))
+df_time['Number of deaths'] = df_time['Number of deaths'].astype(np.int64)
+
+  # View the statistical variables of the data structure
+# Observe the range, maximum, minimum, fluctuating trends, etc. 
+df_time.describe()
+  # View the correlation between data columns
+df_time.drop(df_time.columns[[0,1,2,3,5]], axis=1).corr()
+
+  # Explore the relationship between the number of emergency hospital admissions and the place of death
+# Select specific columns
+df_emergency = df_emergency[['Broad underlying cause of death', 'Narrow underlying cause of death',
+                             'Number of people with at least emergency hospital admission in last 3 month of life',
+                             'Number of people with at least 3 emergency hospital admissions in last 3 month of life'
+                             ]]
+# Data processing on the number of emergency hospital admissions
+df_emergency = df_emergency[~df_emergency['Broad underlying cause of death'].isin(['All'])]
+df_emergency = df_emergency[df_emergency['Narrow underlying cause of death'].isin(['All'])]
+df_emergency = df_emergency[['Broad underlying cause of death',
+                             'Number of people with at least emergency hospital admission in last 3 month of life',
+                             'Number of people with at least 3 emergency hospital admissions in last 3 month of life'
+                             ]]
+df_place = df_place[['Place of death','Number of death']][0:5]
+
+# Simplified column names
+df_emergency.columns = ['CauseBroad', 'at least 1', '3orMore']
+
+# Calculate the number of persons with one or two emergency hospital admissions
+df_emergency['1or2'] = df_emergency['at least 1'] - df_emergency['3orMore']
+
+# Calculate the percentage of different numbers of emergency hospital admissions
+Per1or2 = round(df_emergency['1or2'].sum() / 547648 * 100, 2)
+Per3orMore = round(df_emergency['3orMore'].sum() / 547648 * 100, 2)
+
+# Simplified column names
+df_place.columns = ['PlaceDeath', 'DeathNum']
+PlaceList = df_place['PlaceDeath'].drop_duplicates().tolist()
+
+# Calculate the intersection of the two relationships
+df_place['TotalPer'] = round(df_place['DeathNum'] / 547648 * 100, 2)
+df_place['1or2']=df_place['TotalPer']+Per1or2
+df_place['3orMore']=df_place['TotalPer']+Per3orMore
+df_place
+
+  # Visualisation
+# Assuming df_place is a DataFrame with columns 'PlaceDeath', '1or2', and '3orMore'
+x = np.arange(len(df_place['PlaceDeath']))
+# Set x-axis ticks to the values in df_place['PlaceDeath']
+plt.xticks(x, df_place['PlaceDeath'])
+# Set y-axis label
+plt.ylabel('Percentage of death')
+# Plot '1or2' and '3orMore' against the x-axis
+plt.plot(x, df_place['1or2'], marker='o', label='1or2',color='lightseagreen', linestyle='-')
+plt.plot(x, df_place['3orMore'], marker='o', label='3orMore',color='#97D4CF', linestyle='-')
+# Add legend 
+plt.legend()
+# Set the title of the plot
+plt.title('The relationship between Average emergency admissions in last 3 months of life and Place of death')
+# Display a grid in the plot
+plt.grid()  
+# Show the plot
+plt.show()
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+pd.set_option('display.max_columns', None)
+df_emergency = pd.read_csv('table3.csv', )
+df_emergency = df_emergency[['Broad underlying cause of death', 'Narrow underlying cause of death',
+                             'Demographic category', 'Specific demographic group',
+                             'Number of people with at least emergency hospital admission in last 3 month of life',
+                             'Number of people with at least 3 emergency hospital admissions in last 3 month of life'
+                             ]]
+# Calculate the percentage of deaths for each place of death in the total population
+df_emergency.columns = ['CauseB', 'CauseN', 'PeoType', 'SPeoType', 'P1', '3orMore']
+# Clean invalid data
+df_emergency=df_emergency.drop(df_emergency.index[[34]])
+# Convert object type to computable data type
+df_emergency['P1'] = df_emergency['P1'].map(lambda x: x.replace(',', ''))
+df_emergency['3orMore'] = df_emergency['3orMore'].map(lambda x: x.replace(',', ''))
+df_emergency['P1'] = df_emergency['P1'].astype(np.int64)
+df_emergency['3orMore'] = df_emergency['3orMore'].astype(np.int64)
+df_emergency['1or2'] = df_emergency['P1'] - df_emergency['3orMore']
+
+# Explore the relationship between the number of emergency hospital admissions and demographic category
+# Obtain overall demographic category data
+df_emergency = df_emergency[~df_emergency['PeoType'].isin(['All'])]
+
+# Obtain demographic category data
+PeoTypeList = df_emergency['PeoType'].drop_duplicates().tolist()
+
+  # Visualisation
+# Create subplots based on the number of unique values in 'PeoTypeList'
+fig, axs = plt.subplots(len(PeoTypeList), 2,figsize=(15, 20))
+# Define colors for the pie charts
+colors=['#E8F0E0','#97D4CF','#808080','cadetblue','#E9CFD2','#71BDB1']
+# Iterate through each 'PeoType' in the list
+for pt in PeoTypeList:
+    df = df_emergency.loc[df_emergency['PeoType'] == pt]
+    # Calculate the sum of '1or2' and '3orMore' for normalization
+    sum1or2=df['1or2'].sum()
+    sum3ormore=df['3orMore'].sum()
+    # Calculate percentages for '1or2' and '3orMore'
+    df['Per1or2']=df['1or2']/sum1or2
+    df['Per3orMore']=df['3orMore']/sum3ormore
+    # Extract labels and sizes for '1or2' and '3orMore'
+    labels = df['SPeoType']
+    sizes_1or2 = df['Per1or2']
+    sizes_3ormore = df['Per3orMore']
+
+    # Plot pie chart for '1or2' in the left column
+    axs[PeoTypeList.index(pt),0].pie(sizes_1or2, colors=colors,labels=labels, pctdistance=0.9)
+    axs[PeoTypeList.index(pt),0].axis('equal')  
+    axs[PeoTypeList.index(pt),0].set_title('1or2 of '+pt)
+
+    # Plot pie chart for '3orMore' in the right column
+    axs[PeoTypeList.index(pt),1].pie(sizes_3ormore,colors=colors,labels=labels,pctdistance=0.5)
+    axs[PeoTypeList.index(pt),1].axis('equal')  
+    axs[PeoTypeList.index(pt),1].set_title('3orMore of '+pt )
+# Show the plot
+plt.show()
+
+  # Explore the relationship between the number of emergency hospital admissions and total hospital admissions 
+# Read data from CSV files into DataFrame
+df_emergency = pd.read_csv('ds4d_table_3.csv',skiprows=3)
+df_time = pd.read_csv('ds4d_table_4.csv',skiprows=3)
+# Select specific columns for df_emergency DataFrame
+df_emergency = df_emergency[['Broad underlying cause of death', 'Narrow underlying cause of death',
+                             'Number of people with at least emergency hospital admission in last 3 month of life',
+                             'Number of people with at least 3 emergency hospital admissions in last 3 month of life'
+                             ]]
+# Select specific columns for df_time DataFrame
+df_time = df_time[
+    ['Broad underlying cause of death', 'Narrow underlying cause of death', 'Time period before death',
+    'Number of people admitted']]
+# Process data on emergency hospital admissions
+df_emergency = df_emergency[~df_emergency['Broad underlying cause of death'].isin(['All'])]
+df_emergency = df_emergency[df_emergency['Narrow underlying cause of death'].isin(['All'])]
+df_emergency = df_emergency[['Broad underlying cause of death',
+                             'Number of people with at least emergency hospital admission in last 3 month of life',
+                             'Number of people with at least 3 emergency hospital admissions in last 3 month of life'
+                             ]]
+# Simplified column names
+df_emergency.columns = ['CauseB', 'P1', '3orMore']
+# Convert object type to computable data type
+df_emergency['P1'] = df_emergency['P1'].map(lambda x: x.replace(',', ''))
+df_emergency['3orMore'] = df_emergency['3orMore'].map(lambda x: x.replace(',', ''))
+df_emergency['P1'] = df_emergency['P1'].astype(np.int64)
+df_emergency['3orMore'] = df_emergency['3orMore'].astype(np.int64)
+# Calculate emergency hospital admissions with one or two admissions as a percentage of total hospital admissions
+df_emergency['1or2'] = df_emergency['P1'] - df_emergency['3orMore']
+
+# Process data on time spent in hospital
+df_time = df_time[~df_time['Broad underlying cause of death'].isin(['All'])]
+df_time = df_time[df_time['Narrow underlying cause of death'].isin(['All'])]
+df_time = df_time[['Broad underlying cause of death', 'Time period before death',
+                   'Number of people admitted']]
+# Simplified column names
+df_time.columns = ['CauseB', 'Time', 'Padmit']
+# Convert object type to computable data type
+df_time['Padmit'] = df_time['Padmit'].map(lambda x: x.replace(',', ''))
+df_time['Padmit'] = df_time['Padmit'].astype(np.int64)
+# Filter the data
+df_time = df_time[df_time['Time'].isin(['6 months'])]
+# Merge two DataFrames
+df = pd.merge(df_time, df_emergency)
+df = df.drop(['P1', 'Time'], axis=1)
+df['P1or2']=round(df['1or2']/df['Padmit']*100)
+df['P3orMore']=round(df['3orMore']/df['Padmit']*100)
+
+# Select data columns for plotting
+dates = df['CauseB']
+threeOrMore = df['3orMore']
+oneOrTwo = df['1or2']
+# Set the figure size
+plt.figure(figsize=(10, 6))
+# Set the width of the bars
+bar_width = 0.35
+# Choose colors for the bars
+colors=['lightseagreen','aqua','darkturquoise','lightblue','lightblue','cadetblue']
+# Set the positions on the x-axis
+x = range(len(df['CauseB']))
+# Plot the bar for 'P1or2' with specified color
+plt.bar(x, df['P1or2'], bar_width, label='P1or2',color='lightseagreen', align='center')
+# Plot the bar for 'P3orMore'
+plt.bar([i + bar_width for i in x], df['P3orMore'], bar_width, label='P3orMore',color='#97D4CF', align='center')
+# Set x-axis labels
+plt.xticks([i + bar_width/2 for i in x], df['CauseB'])
+# Add legend
+plt.legend()
+# Set title and labels
+plt.title('The relationship between Average emergency hospital admissions in last 3 months of life and Percentage Number of people admitted')
+plt.xlabel('CauseB')
+plt.ylabel('Percentage of admitted rate')
+# Show the plot
+plt.show()
+
+  
